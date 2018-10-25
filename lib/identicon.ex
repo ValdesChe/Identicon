@@ -15,4 +15,18 @@ defmodule Identicon do
   def hello do
     :world
   end
+
+  def main(input) do
+    input
+    |> hash_input
+  end
+
+  def hash_input(input) do
+    # :binary.bin_to_list(:crypto.hash(:md5, input))
+    :crypto.hash(:md5, input)
+    |> :binary.bin_to_list()
+  end
+
+  def save(_binary, _filename) do
+  end
 end
