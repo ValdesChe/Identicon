@@ -23,8 +23,11 @@ defmodule Identicon do
 
   def hash_input(input) do
     # :binary.bin_to_list(:crypto.hash(:md5, input))
-    :crypto.hash(:md5, input)
-    |> :binary.bin_to_list()
+    hex =
+      :crypto.hash(:md5, input)
+      |> :binary.bin_to_list()
+
+    %Identicon.Image{hex: hex}
   end
 
   def save(_binary, _filename) do
