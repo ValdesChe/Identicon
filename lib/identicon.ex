@@ -16,30 +16,83 @@ defmodule Identicon do
     :world
   end
 
+  @doc """
+    Return an `Identicon` representing the given `input` in parameter.
+
+  ## Examples
+      iex> Identicon.main("Valde1s")
+      :ok
+  """
   def main(input) do
     input
     |> hash_input
     |> pick_color
     |> build_grid
+    |> filter_odd_squares
+    |> build_pixel_map
+    |> draw_image
+    |> save_image(input)
   end
 
-  def build_grid(%Identicon.Image{hex: hex} = _image) do
-    hex
-    |> Enum.chunk_every(3)
-    |> mirror_row
+  def save_image(image, filename) do
+    File.write("#{filename}.png", image)
+  end
+
+  def draw_image(%Identicon.Image{color: color, pixel_map: pixel_map}) do
+    image = :egd.create(250, 250)
+    # color format [12 , 255 , 6]
+    fill = :egd.color(color)
+
+    Enum.each(pixel_map, fn {start, stop} ->
+      :egd.filledRectangle(image, start, stop, fill)
+    end)
+
+    :egd.render(image)
+  end
+
+  def build_pixel_map(%Identicon.Image{grid: grid} = image) do
+    pixel_map =
+      Enum.map(grid, fn {_code, index} ->
+        horizontal = rem(index, 5) * 50
+        vertical = div(index, 5) * 50
+
+        top_left = {horizontal, vertical}
+        botton_right = {horizontal + 50, vertical + 50}
+        {top_left, botton_right}
+      end)
+
+    %Identicon.Image{image | pixel_map: pixel_map}
+  end
+
+  def build_grid(%Identicon.Image{hex: hex} = image) do
+    grid =
+      hex
+      |> Enum.chunk_every(3, 3, :discard)
+      |> Enum.map(&mirror_row/1)
+      |> List.flatten()
+      |> Enum.with_index()
+
+    %Identicon.Image{image | grid: grid}
+  end
+
+  def filter_odd_squares(%Identicon.Image{grid: grid} = image) do
+    grid =
+      grid
+      |> Enum.filter(fn {elt, _index} -> rem(elt, 2) == 0 end)
+
+    %Identicon.Image{image | grid: grid}
   end
 
   @doc """
     Mirroring our 3 elements
   ## Examples
-      iex> image = [[3 , 2 , 8],[1, 2, 3]]
+      iex> image = [3, 2, 8]
       iex> Identicon.mirror_row(image)
-            [[3 , 2 , 8 , 2 , 3], [1, 2, 3, 2 , 1]]
+      [3, 2, 8, 2, 3]
   """
-  def mirror_row(image) do
-    for [first, second | _other] = row <- image do
-      List.flatten([row | [second, first]])
-    end
+  def mirror_row(row) do
+    [first, second, _other] = row
+    row ++ [second, first]
   end
 
   def hash_input(input) do
@@ -53,9 +106,6 @@ defmodule Identicon do
 
   def pick_color(%Identicon.Image{hex: [r, g, b | _tail]} = image) do
     # [r, g, b]
-    %Identicon.Image{image | color: [r, g, b]}
-  end
-
-  def save(_binary, _filename) do
+    %Identicon.Image{image | color: {r, g, b}}
   end
 end
