@@ -1,6 +1,6 @@
 # Identicon
 [![Build Status](https://travis-ci.com/ValdesChe/Identicon.svg?branch=master)](https://travis-ci.com/ValdesChe/Identicon)
-**TODO: Add description**
+
 
 ## Installation
 
